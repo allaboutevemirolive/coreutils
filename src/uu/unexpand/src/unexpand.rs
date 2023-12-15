@@ -14,8 +14,8 @@ use std::num::IntErrorKind;
 use std::str::from_utf8;
 use unicode_width::UnicodeWidthChar;
 use uucore::display::Quotable;
-use uucore::error::{FromIo, UError, UResult};
-use uucore::{crash, crash_if_err, format_usage, help_about, help_usage};
+use uucore::error::{FromIo, UError, UResult, USimpleError};
+use uucore::{crash_if_err, format_usage, help_about, help_usage};
 
 const USAGE: &str = help_usage!("unexpand.md");
 const ABOUT: &str = help_about!("unexpand.md");
@@ -209,16 +209,19 @@ pub fn uu_app() -> Command {
         )
 }
 
-fn open(path: &str) -> BufReader<Box<dyn Read + 'static>> {
+fn open(path: &str) -> UResult<BufReader<Box<dyn Read + 'static>>> {
     let file_buf;
     if path == "-" {
-        BufReader::new(Box::new(stdin()) as Box<dyn Read>)
+        Ok(BufReader::new(Box::new(stdin()) as Box<dyn Read>))
     } else {
         file_buf = match File::open(path) {
             Ok(a) => a,
-            Err(e) => crash!(1, "{}: {}", path.maybe_quote(), e),
+            Err(e) => {
+                let err = format!("{}: {}", path.maybe_quote(), e);
+                return Err(USimpleError::new(1, err));
+            }
         };
-        BufReader::new(Box::new(file_buf) as Box<dyn Read>)
+        Ok(BufReader::new(Box::new(file_buf) as Box<dyn Read>))
     }
 }
 
@@ -322,7 +325,9 @@ fn unexpand(options: &Options) -> std::io::Result<()> {
     let lastcol = if ts.len() > 1 { *ts.last().unwrap() } else { 0 };
 
     for file in &options.files {
-        let mut fh = open(file);
+        let fh = open(file);
+
+        let mut fh = fh.unwrap();
 
         while match fh.read_until(b'\n', &mut buf) {
             Ok(s) => s > 0,
