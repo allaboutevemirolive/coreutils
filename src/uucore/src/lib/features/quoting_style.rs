@@ -185,6 +185,7 @@ fn shell_without_escape(name: &str, quotes: Quotes, show_control_chars: bool) ->
     let mut must_quote = false;
     let mut escaped_str = String::with_capacity(name.len());
 
+    // println!("name: {}", name);
     for c in name.chars() {
         let escaped = {
             let ec = EscapedChar::new_shell(c, false, quotes);
@@ -262,7 +263,10 @@ fn shell_with_escape(name: &str, quotes: Quotes) -> (String, bool) {
     (escaped_str, must_quote)
 }
 
+// DEBUG: IMPORTANCE
 pub fn escape_name(name: &OsStr, style: &QuotingStyle) -> String {
+    // println!("name: {:?}", name);
+    // println!("style: {}", style);
     match style {
         QuotingStyle::Literal { show_control } => {
             if *show_control {
@@ -287,12 +291,15 @@ pub fn escape_name(name: &OsStr, style: &QuotingStyle) -> String {
                 Quotes::None => escaped_str,
             }
         }
-        QuotingStyle::Shell {
+        QuotingStyle::Shell { // DEBUG
             escape,
             always_quote,
             show_control,
         } => {
+            // println!("Hello World");
             let name = name.to_string_lossy();
+
+            // println!("name: {}", name);
             let (quotes, must_quote) = if name.contains(&['"', '`', '$', '\\'][..]) {
                 (Quotes::Single, true)
             } else if name.contains('\'') {
@@ -304,6 +311,7 @@ pub fn escape_name(name: &OsStr, style: &QuotingStyle) -> String {
             };
 
             let (escaped_str, contains_quote_chars) = if *escape {
+                // println!("GGG");
                 shell_with_escape(&name, quotes)
             } else {
                 shell_without_escape(&name, quotes, *show_control)

@@ -432,6 +432,7 @@ struct LongFormat {
     numeric_uid_gid: bool,
 }
 
+#[derive(Debug)]
 struct PaddingCollection {
     #[cfg(unix)]
     inode: usize,
@@ -1939,9 +1940,15 @@ pub fn list(locs: Vec<&Path>, config: &Config) -> UResult<()> {
     sort_entries(&mut files, config, &mut out);
     sort_entries(&mut dirs, config, &mut out);
 
-    display_items(&files, config, &mut out, &mut dired, &mut style_manager)?;
+    // println!("Files: {:?}", files);
 
+    // println!("Hello World");
+    display_items(&files, config, &mut out, &mut dired, &mut style_manager)?;
+    // println!("Hello World");
+    // NOTE: Output for 'ls a 'sp ace'', executed after this
     for (pos, path_data) in dirs.iter().enumerate() {
+        // writeln!(out,"Hello World")?;
+        // println!("Hello World");
         // Do read_dir call here to match GNU semantics by printing
         // read_dir errors before directory headings, names and totals
         let read_dir = match fs::read_dir(&path_data.p_buf) {
@@ -1996,6 +2003,7 @@ pub fn list(locs: Vec<&Path>, config: &Config) -> UResult<()> {
         )?;
     }
     if config.dired {
+        // println!("Jujutsu Kaisen");
         dired::print_dired_output(config, &dired, &mut out)?;
     }
     Ok(())
@@ -2301,7 +2309,9 @@ fn display_additional_leading_info(
     let mut result = String::new();
     #[cfg(unix)]
     {
+        // IGNORE
         if config.inode {
+            // println!("BETA");
             let i = if let Some(md) = item.md(out) {
                 get_inode(md)
             } else {
@@ -2311,7 +2321,9 @@ fn display_additional_leading_info(
         }
     }
 
+    // IGNORE
     if config.alloc_size {
+        // println!("BETA");
         let s = if let Some(md) = item.md(out) {
             display_size(get_block_size(md, config), config)
         } else {
@@ -2327,6 +2339,7 @@ fn display_additional_leading_info(
     Ok(result)
 }
 
+// DEBUG
 #[allow(clippy::cognitive_complexity)]
 fn display_items(
     items: &[PathData],
@@ -2339,7 +2352,10 @@ fn display_items(
     // Display the SELinux security context or '?' if none is found. When used with the `-l`
     // option, print the security context to the left of the size column.
 
+    // println!("Hello World");
+    // IGNORE
     if config.format == Format::Long {
+        // println!("jujutsu");
         let padding_collection = calculate_padding_collection(items, config, out);
 
         for item in items {
@@ -2359,8 +2375,13 @@ fn display_items(
             display_item_long(item, &padding_collection, config, out, dired, style_manager)?;
         }
     } else {
+        // DEBUG
+        // println!("JUJUTSU");
         let mut longest_context_len = 1;
+
+        // IGNORE
         let prefix_context = if config.context {
+            // println!("GAMNE");
             for item in items {
                 let context_len = item.security_context.len();
                 longest_context_len = context_len.max(longest_context_len);
@@ -2372,20 +2393,51 @@ fn display_items(
 
         let padding = calculate_padding_collection(items, config, out);
 
-        let mut names_vec = Vec::new();
+        // println!("padding: {:?}", padding);
 
+        let mut names_vec: Vec<Cell> = Vec::new();
+
+        let mut temp: Vec<Cell> = Vec::new();
+
+        // let mut iter = items.peekable();
+
+        // println!("items: {:?}", items);
+
+        // DEBUG
         for i in items {
+            // println!("i: {:?}", i);
             let more_info = display_additional_leading_info(i, &padding, config, out)?;
+            
+            // println!("{}", more_info);
+            // DEBUG: IMPORTANT
             let cell = display_file_name(i, config, prefix_context, more_info, out, style_manager);
-            names_vec.push(cell);
+            
+            temp.push(cell);
         }
 
-        let names = names_vec.into_iter();
+        for (index, cell) in temp.iter().enumerate() {
+            println!("Index: {}, Cell: {:?}", index, cell);
+        }
+        
+
+        
+
+        let names = temp.clone().into_iter();
 
         match config.format {
-            Format::Columns => display_grid(names, config.width, Direction::TopToBottom, out)?,
-            Format::Across => display_grid(names, config.width, Direction::LeftToRight, out)?,
+            // DEBUG
+            Format::Columns => {
+                // println!("FOOD");
+                display_grid(names, config.width, Direction::TopToBottom, out)?
+            }
+            Format::Across => { 
+                // println!("FOOD");
+                display_grid(names, config.width, Direction::LeftToRight, out)?
+            }
+            
+            // IGNORE
             Format::Commas => {
+                // println!("FOOD");
                 let mut current_col = 0;
                 let mut names = names;
                 if let Some(name) = names.next() {
@@ -2409,8 +2461,10 @@ fn display_items(
                     write!(out, "{}", config.line_ending)?;
                 }
             }
+            // IGNORE
             _ => {
                 for name in names {
+                    // println!("FOOD");
                     write!(out, "{}{}", name.contents, config.line_ending)?;
                 }
             }
@@ -2454,13 +2508,15 @@ fn get_block_size(md: &Metadata, config: &Config) -> u64 {
     }
 }
 
+// display_grid(names, config.width, Direction::TopToBottom, out)?
 fn display_grid(
     names: impl Iterator<Item = Cell>,
     width: u16,
     direction: Direction,
     out: &mut BufWriter<Stdout>,
 ) -> UResult<()> {
-    if width == 0 {
+    if width == 0 { // IGNORE
+        // println!("GG");
         // If the width is 0 we print one single line
         let mut printed_something = false;
         for name in names {
@@ -2473,13 +2529,16 @@ fn display_grid(
         if printed_something {
             writeln!(out)?;
         }
-    } else {
+    } else { // DEBUG
+        // println!("lapar");
         // TODO: To match gnu/tests/ls/stat-dtype.sh
         // we might want to have Filling::Text("\t".to_string());
         let filling = Filling::Spaces(2);
         let mut grid = Grid::new(GridOptions { filling, direction });
 
+        // DEBUG
         for name in names {
+            // println!("name: {:?}", name);
             grid.add(name);
         }
 
@@ -3008,13 +3067,16 @@ fn display_file_name(
     out: &mut BufWriter<Stdout>,
     style_manager: &mut StyleManager,
 ) -> Cell {
+    // DEBUG
     // This is our return value. We start by `&path.display_name` and modify it along the way.
     let mut name = escape_name(&path.display_name, &config.quoting_style);
 
+    // println!("name: {}", name);
     // We need to keep track of the width ourselves instead of letting term_grid
     // infer it because the color codes mess up term_grid's width calculation.
     let mut width = name.width();
 
+    // IGNORE
     if config.hyperlink {
         let hostname = hostname::get().unwrap_or(OsString::from(""));
         let hostname = hostname.to_string_lossy();
@@ -3024,10 +3086,12 @@ fn display_file_name(
 
         // TODO encode path
         // \x1b = ESC, \x07 = BEL
-        name = format!("\x1b]8;;file://{hostname}{absolute_path}\x07{name}\x1b]8;;\x07");
+        name = format!("\x1b]8;;file://{hostname}{absolute_path}\x07{name}\x1b]8;;\x07");    
     }
 
+    // IGNORE
     if let Some(ls_colors) = &config.color {
+        // println!("kuala");
         let md = path.md(out);
         name = if md.is_some() {
             color_name(name, &path.p_buf, md, ls_colors, style_manager)
@@ -3042,14 +3106,18 @@ fn display_file_name(
         };
     }
 
+    // IGNORE
     if config.format != Format::Long && !more_info.is_empty() {
+        // println!("kuala");
         // increment width here b/c name was given colors and name.width() is now the wrong
         // size for display
         width += more_info.width();
         name = more_info + &name;
     }
 
+    // IGNORE
     if config.indicator_style != IndicatorStyle::None {
+        //println!("kuala");
         let sym = classify_file(path, out);
 
         let char_opt = match config.indicator_style {
@@ -3077,11 +3145,13 @@ fn display_file_name(
         }
     }
 
+    // IGNORE
     if config.format == Format::Long
         && path.file_type(out).is_some()
         && path.file_type(out).unwrap().is_symlink()
         && !path.must_dereference
     {
+        // println!("kuala");
         match path.p_buf.read_link() {
             Ok(target) => {
                 name.push_str(" -> ");
@@ -3141,9 +3211,12 @@ fn display_file_name(
         }
     }
 
+
+    // IGNORE
     // Prepend the security context to the `name` and adjust `width` in order
     // to get correct alignment from later calls to`display_grid()`.
     if config.context {
+        // println!("kuala");
         if let Some(pad_count) = prefix_context {
             let security_context = if matches!(config.format, Format::Commas) {
                 path.security_context.clone()
